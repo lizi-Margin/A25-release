@@ -1,5 +1,31 @@
+# text editor config
+/.vs
+/.vscode
 /.idea
 /.idea/*
+
+# video
 /s_video.zip
 /video
 /video/*
+*.mp4
+
+# pyc
+*.pyc
+__pycache__
+
+# third party
+/A25/third_party
+/A25/third_party/*
+
+# test
+/tt.py
+
+# deyolo
+/ultralytics
+
+# model
+*.pt
+*.pth
+*.tar
+*.pkl
