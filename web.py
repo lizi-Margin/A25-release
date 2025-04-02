@@ -6,11 +6,21 @@ import time
 from sklearn.metrics import precision_score, recall_score
 from skimage.metrics import structural_similarity as ssim
 import pandas as pd
+from A25.UTIL.colorful import *
+
+def has_None(*args):
+    for x in args:
+        if x is None:
+            return True
+    return False
 
 def run_batch(wl, ir):
+    if has_None(wl, ir):
+        print红("ERROR: got None in args")
+        return
     from align import get_aligned_vid_path
     from A25 import run_model, run_fusion
-    from A25.UTIL.colorful import print绿
+    
 
     aligned_wl, aligned_ir = get_aligned_vid_path(wl, ir) 
     yield aligned_wl, aligned_ir, None, None, None 
@@ -23,6 +33,23 @@ def run_batch(wl, ir):
     dehazed_o, deyolo_o = run_model(aligned_wl, aligned_ir)
     yield aligned_wl, aligned_ir, fusion_o, dehazed_o, deyolo_o
     print绿(f"去雾/检测完成: {dehazed_o}, {deyolo_o}")
+
+def run_stream(*args):
+    if has_None(*args): 
+        print红("ERROR: got None in args")
+        return
+    result = get_stream_iter(*args)
+    if result is None:
+        print红("ERROR: stream generator is None")
+        return
+    
+    try:
+        while True:
+            x = next(result)
+            yield x
+    except StopIteration:
+        pass
+
 
 
 # 自定义CSS样式
@@ -79,7 +106,7 @@ with gr.Blocks(title="A25-release", css=custom_css) as interface:
     
     from A25 import get_stream_iter
     run_stream_btn.click(
-        fn=get_stream_iter,
+        fn=run_stream,
         inputs=[aligned_wl_video_stream_input, aligned_ir_video_stream_input],
         outputs=[fused_frame, dehazed_fused_frame, dehazed_wl_frame, deyolo_frame],
         show_progress=True
