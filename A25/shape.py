@@ -1,15 +1,10 @@
 import cv2
 import numpy as np
+from A25.global_config import GlobalConfig as cfg
 
 def get_shaped_vid_path(near_ir_video_path: str, far_ir_video_path: str):
-
-    # # 输入视频路径
-    # near_ir_video_path = "C:/Users/xiwei/Desktop/服创/无锡低温烟雾环境双光视频/output_rgb_smoked3.mp4"  # 替换为你的近红外视频文件路径
-    # far_ir_video_path = "C:/Users/xiwei/Desktop/服创/无锡低温烟雾环境双光视频/speed_output_tr_smoked3_25fps.mp4"    # 替换为你的远红外视频文件路径
-
-    # 输出视频路径（可选）
-    near_ir_output_path = "./output_get_shaped_vid_path_NIR.mp4"
-    far_ir_output_path = "./output_get_shaped_vid_path_FIR.mp4"
+    near_ir_output_path = f"{cfg.outputdir}/output_get_shaped_vid_path_NIR.mp4"
+    far_ir_output_path = f"{cfg.outputdir}/output_get_shaped_vid_path_FIR.mp4"
 
     # 打开视频文件
     near_ir_cap = cv2.VideoCapture(near_ir_video_path)
@@ -69,8 +64,8 @@ def get_shaped_vid_path(near_ir_video_path: str, far_ir_video_path: str):
 def get_shaped_vid_path_(near_ir_video_path: str, far_ir_video_path: str):
 
     # 输出视频路径（可选）
-    near_ir_output_path = "./output_get_shaped_vid_path_NIR.mp4"
-    far_ir_output_path = "./output_get_shaped_vid_path_FIR.mp4"
+    near_ir_output_path = f"{cfg.outputdir}/output_get_shaped_vid_path_NIR.mp4"
+    far_ir_output_path = f"{cfg.outputdir}/output_get_shaped_vid_path_FIR.mp4"
 
     # 打开视频文件
     near_ir_cap = cv2.VideoCapture(near_ir_video_path)

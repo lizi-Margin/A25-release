@@ -29,3 +29,7 @@ class GlobalConfig:
     sz_wh = (640, 640)
 
     # mcv = get_a_logger()
+
+    outputdir = f"{root_dir}/tmp/output/"
+
+if not os.path.exists(GlobalConfig.outputdir): os.mkdir(GlobalConfig.outputdir)

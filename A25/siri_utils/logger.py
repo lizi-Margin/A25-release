@@ -1,4 +1,5 @@
 from A25.global_config import GlobalConfig as cfg
+import pprint, numpy as np
 
 
 def lprint_(obj, x, debug=False):
@@ -29,3 +30,12 @@ def print_obj(obj):
         if not attr.startswith('__'):
             value = getattr(obj, attr)
             print(f"{attr}: {value}")
+
+def print_dict(data):
+    summary = {
+        key: f" {type(value)}, shape={value.shape}, dtype={value.dtype}" if isinstance(value, np.ndarray) 
+                                                                        else type(value) 
+                                                                        for key, value in data.items()
+    }
+    
+    pprint.pp(summary)

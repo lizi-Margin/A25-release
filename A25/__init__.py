@@ -1,18 +1,13 @@
 import os, cv2, torch
 from tqdm import tqdm
 from A25.UTIL.colorful import *
-from gradio import processing_utils
+from A25.video_utils import _ensure_vid_format
 
 from A25.dehaze import get_dehazed_vid_path
 from A25.deyolo import get_deyolo_vid_path
 from A25.video_fusion import process_video
 from A25.stream_process import process_frame
-
-def _ensure_vid_format(output_video):
-    if (processing_utils.ffmpeg_installed() and not processing_utils.video_is_playable(output_video)):
-        # make sure no warnings from gradio
-        output_video = processing_utils.convert_video_to_playable_mp4(output_video)
-    return output_video
+from A25.align import get_aligned_vid_path
 
 def print_vid_info(video):
     print(f"type={type(video)}, value={repr(video)}")
@@ -51,7 +46,7 @@ def run_fusion(wl_video, ir_video):
     print蓝(f"[run_model] return value = ({fusion_o},)")
     return fusion_o
 
-def get_stream_iter(aligned_wl_video, aligned_ir_video):
+def get_stream_iter(aligned_wl_video, aligned_ir_video, use_deyolo=True):
     wl_cap = cv2.VideoCapture(aligned_wl_video)
     ir_cap = cv2.VideoCapture(aligned_ir_video)
     
@@ -78,7 +73,7 @@ def get_stream_iter(aligned_wl_video, aligned_ir_video):
             ir_ret, ir_frame = ir_cap.read()
             if not ir_ret or not wl_ret: break
             
-            o = process_frame(wl_frame, ir_frame)
+            o = process_frame(wl_frame, ir_frame, use_deyolo)
             
             yield o['fused_frame'], o['dehazed_fused_frame'], o['dehazed_wl_frame'], o['deyolo_frame']
 

@@ -1,9 +1,10 @@
-import cv2, torch
+import cv2, torch, os
 import numpy as np
 import random
 from skimage.metrics import structural_similarity as ssim
 from tqdm import tqdm
-from pytorch_ssim import ssim
+from A25.pytorch_ssim import ssim
+from A25.global_config import GlobalConfig as cfg
 
 
 # def compute_similarity(frame1, frame2):
@@ -83,9 +84,10 @@ def find_alignment_anchor(video_path1, video_path2, sample_size=20, window_size=
     return best_frame1, best_frame2
 
 
-def align_and_save_video(video_path1, video_path2, output_path, sample_size=20):
+def align_and_save_video(video_path1, video_path2, sample_size=20):
+    output_dir = cfg.outputdir
     """基于锚点帧对齐视频"""
-    best_frame1_idx, best_frame2_idx = find_alignment_anchor(video_path1, video_path2, sample_size, output=output_path)
+    best_frame1_idx, best_frame2_idx = find_alignment_anchor(video_path1, video_path2, sample_size, output=os.path.join(output_dir, 'output_time_alignment') if output_dir else './output_time_alignment')
 
 
 
@@ -96,8 +98,14 @@ def align_and_save_video(video_path1, video_path2, output_path, sample_size=20):
     width = int(cap1.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap1.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width * 2, height))
+    # 使用output_dir参数决定输出路径
+    output_path1 = os.path.join(output_dir, 'output_time_alignment_video1.mp4') if output_dir else './output_time_alignment_video1.mp4'
+    output_path2 = os.path.join(output_dir, 'output_time_alignment_video2.mp4') if output_dir else './output_time_alignment_video2.mp4'
+
+    fourcc1 = cv2.VideoWriter_fourcc(*'XVID')
+    out1 = cv2.VideoWriter(output_path1, fourcc1, fps, (width, height))
+    fourcc2 = cv2.VideoWriter_fourcc(*'XVID')
+    out2 = cv2.VideoWriter(output_path2, fourcc2, fps, (width, height))
 
     frame_index = 0
 
@@ -119,9 +127,12 @@ def align_and_save_video(video_path1, video_path2, output_path, sample_size=20):
         frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
         frame2_gray = cv2.resize(frame2_gray, (width, height))
 
-        merged_frame = np.hstack([frame1_gray, frame2_gray])
-        merged_frame = cv2.cvtColor(merged_frame, cv2.COLOR_GRAY2BGR)
-        out.write(merged_frame)
+        frame1 = cv2.cvtColor(frame1_gray, cv2.COLOR_GRAY2BGR)
+        frame2 = cv2.cvtColor(frame2_gray, cv2.COLOR_GRAY2BGR)
+        # merged_frame = np.hstack([frame1_gray, frame2_gray])
+        
+        out1.write(frame1)
+        out2.write(frame2)
 
         # # 实时显示对齐情况
         # cv2.imshow("Aligned Frames", merged_frame)
@@ -130,20 +141,19 @@ def align_and_save_video(video_path1, video_path2, output_path, sample_size=20):
 
     cap1.release()
     cap2.release()
-    out.release()
+    out1.release()
+    out2.release()
     # cv2.destroyAllWindows()
+    return output_path1, output_path2
 
     
 def get_aligned_vid_path(video1, video2):
-    # video1 = "rgb_smoked1-shaped.mp4"
-    # video2 = "tr_smoked1-shaped.mp4"
-    output_video = "time_alignment_output.mp4"
-    align_and_save_video(video1, video2, output_video, sample_size=20)
+    return align_and_save_video(video1, video2, sample_size=20)
 
 
 def test_alignment(video1, video2):
     for i in range(100):
-        find_alignment_anchor(video1, video2, 20, output=f"alignment_test_{i}")
+        find_alignment_anchor(video1, video2, 20, output=f"{cfg.outputdir}/alignment_test_{i}")
 
 if __name__ == "__main__":
     video1 = "rgb_smoked1-shaped.mp4"

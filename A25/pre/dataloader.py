@@ -105,7 +105,7 @@ class DEYOLO_Dataset(GanDataset):
 class MemDEYOLO_Dataset(DEYOLO_Dataset):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mem = [self.get(i) for i in tqdm(range(self.length()), desc="Loading dataset into memory")]
+        self.mem = [self.get(i) for i in tqdm(range(int(self.length()/10)), desc="Loading dataset into memory")]
 
     def __getitem__(self, idx):
         return self.mem[idx]

@@ -4,9 +4,11 @@ import subprocess
 import numpy as np
 from tqdm import tqdm
 
-from A25 import _ensure_vid_format
-from shape import get_shaped_vid_path
-
+from A25.video_utils import _ensure_vid_format
+from A25.shape import get_shaped_vid_path
+from A25.time_alignment import get_aligned_vid_path as get_time_aligned_vid_path
+from A25.global_config import GlobalConfig as cfg
+from A25.cache import with_dual_cache
 
 def convert_vid_fps_with_speed(input_file,original_fps=25, target_fps=30):
     """
@@ -17,7 +19,7 @@ def convert_vid_fps_with_speed(input_file,original_fps=25, target_fps=30):
         original_fps (int): 原始帧率 (默认: 25)
         target_fps (int): 目标帧率 (默认: 30)
     """
-    output_file = "./output_convert_video_fps_with_speed.mp4"
+    output_file = f"{cfg.outputdir}/output_convert_video_fps_with_speed.mp4"
     print(f"开始转换视频: '{input_file}' -> '{output_file}'")
 
     # 检查输入文件是否存在
@@ -121,9 +123,8 @@ def convert_vid_fps_with_speed(input_file,original_fps=25, target_fps=30):
         traceback.print_exc()
         return input_file
 
-
 def convert_vid_fps(input_file, target_fps=25.0):
-    output_file = "./output_convert_fps.mp4"
+    output_file = f"{cfg.outputdir}/output_convert_fps.mp4"
     # 打开视频文件
     cap = cv2.VideoCapture(input_file)
     if not cap.isOpened():
@@ -184,10 +185,10 @@ def convert_vid_fps(input_file, target_fps=25.0):
         print(f"转换失败，输出文件未创建或为空: {output_file}")
         return input_file
 
-
-
+@with_dual_cache
 def get_aligned_vid_path(wl_vid, ir_vid):
     ir_vid = convert_vid_fps_with_speed(ir_vid, original_fps=25, target_fps=30)
     ir_vid = convert_vid_fps(ir_vid, target_fps=25)
     wl_vid, ir_vid = get_shaped_vid_path(wl_vid, ir_vid)
+    wl_vid, ir_vid = get_time_aligned_vid_path(wl_vid, ir_vid)
     return _ensure_vid_format(wl_vid), _ensure_vid_format(ir_vid)

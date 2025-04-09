@@ -10,6 +10,11 @@
 /video/*
 *.mp4
 
+# pic
+*.png
+*.jpg
+*.jpeg
+
 # pyc
 *.pyc
 __pycache__
@@ -29,3 +34,13 @@ __pycache__
 *.pth
 *.tar
 *.pkl
+
+# tmp dir
+/tmp
+/tmp/*
+
+# ultralytics
+/A25/yolo_ultralytics
+
+# datasets
+/datasets

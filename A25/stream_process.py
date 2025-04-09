@@ -8,6 +8,7 @@ from A25.global_config import GlobalConfig as cfg
 import A25.video_fusion as video_fusion
 import A25.dehaze as dehaze
 import A25.deyolo as deyolo
+import A25.yolo as yolo
 
 def fuse_frame(wl_frame, ir_frame):
     device = cfg.device
@@ -82,18 +83,45 @@ def deyolo_detect_frame(wl_frame, ir_frame):
     ir_frame = annotator.annotate(scene=ir_frame, detections=detections)
     return wl_frame, detections
 
-def process_frame(wl_frame, ir_frame):
+def yolo_detect_frame(frame):
+    results = yolo._predict(frame)
+    if isinstance(results, list):
+        result = results[0]
+    else:
+        result = next(results)
+
+    detections = sv.Detections.from_ultralytics(result)
+    detections = deyolo.tracker.update_with_detections(detections)
+
+    annotator = sv.BoxAnnotator()
+    frame = annotator.annotate(scene=frame, detections=detections)
+    return frame, detections
+
+def process_frame(wl_frame, ir_frame, use_deyolo):
     fused_frame = fuse_frame(wl_frame, ir_frame)
     
-    dehazed_fused_frame = dehaze_frame(fused_frame)
     dehazed_wl_frame = dehaze_frame(wl_frame)
 
-    deyolo_frame, deyolo_detections = deyolo_detect_frame(wl_frame, ir_frame)
+    dehazed_fused_frame = fuse_frame(dehazed_wl_frame, ir_frame)
+
+    if use_deyolo:
+        yolo_frame, yolo_detections = deyolo_detect_frame(wl_frame, ir_frame)
+    else:
+        yolo_frame, yolo_detections = yolo_detect_frame(wl_frame)
+
+    fused_frame_path = f"{cfg.outputdir}/fused_frame.jpg"
+    cv2.imwrite(fused_frame_path, fused_frame)
+    dehazed_fused_frame_path = f"{cfg.outputdir}/dehazed_fused_frame.jpg"
+    cv2.imwrite(dehazed_fused_frame_path, dehazed_fused_frame)
+    dehazed_wl_frame_path = f"{cfg.outputdir}/dehazed_wl_frame.jpg"
+    cv2.imwrite(dehazed_wl_frame_path, dehazed_wl_frame)
+    yolo_frame_path = f"{cfg.outputdir}/yolo_frame.jpg"
+    cv2.imwrite(yolo_frame_path, yolo_frame)
 
     return {
-        'fused_frame': cv2.cvtColor(fused_frame, cv2.COLOR_RGB2BGR),
-        'dehazed_fused_frame': cv2.cvtColor(dehazed_fused_frame, cv2.COLOR_RGB2BGR),
-        'dehazed_wl_frame': cv2.cvtColor(dehazed_wl_frame, cv2.COLOR_RGB2BGR),
-        'deyolo_frame': cv2.cvtColor(deyolo_frame, cv2.COLOR_RGB2BGR)
+        'fused_frame': fused_frame_path,
+        'dehazed_fused_frame': dehazed_fused_frame_path,
+        'dehazed_wl_frame': dehazed_wl_frame_path,
+        'deyolo_frame': yolo_frame_path
     }
 

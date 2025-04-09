@@ -10,6 +10,7 @@ color_model.load_state_dict(torch.load("./A25/third_party/AutomaticImageColoriza
 
 import cv2
 import A25.third_party.DehazeEnhanceQT.retinex as retinex
+import A25.third_party.DehazeEnhanceQT.retinex_pytorch as retinex_pytorch
 from json import load
 with open('./A25/third_party/DehazeEnhanceQT/config.json', 'r') as f:
     config = load(f)
@@ -47,7 +48,7 @@ def automatedMSRCR(img):
 
 def MSRCP(img):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    img_msrcr = retinex.MSRCP(
+    img_msrcr = retinex_pytorch.MSRCP(
         img,
         config['sigma_list'],
         config['low_clip'],
@@ -58,7 +59,7 @@ def MSRCP(img):
 
 
 def wl_to_color(wl_images):
-    wl_images224 = F.resize(wl_images[:, 0:1, ...], (224, 224,))
+    wl_images224 = F.resize(wl_images[:, 0:1, ...], (640, 640,))
     wl_images224 = (wl_images224 + 1)/2
     with torch.no_grad(): color_images = color_model(wl_images224)
     
@@ -69,7 +70,7 @@ def wl_to_color(wl_images):
     color_images[:, 1:3, ...] = color_images[:, 1:3, ...] * 255 - 128   
     color_images = kornia.color.lab_to_rgb(color_images)  # /255 is included in this func
 
-    color_images = illumination_boost(color_images, lambda_val=2.)
+    # color_images = illumination_boost(color_images, lambda_val=1.)
     # color_images = batch_process(color_images, func=CEEF); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
     # color_images = batch_process(color_images, func=automatedMSRCR); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
     # color_images = batch_process(color_images, func=MSRCR); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
