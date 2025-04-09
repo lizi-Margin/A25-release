@@ -24,8 +24,8 @@ try:
 finally:
    warnings.filters = original_filters
     
-def process_video(vi_video, ir_video):
-    output_video = './output_fusion.mp4'
+def process_video(vi_video, ir_video, output_video=None):
+    if output_video is None: output_video = './output_fusion.mp4'
     
     # 打开红外和可见光视频
     ir_cap = cv2.VideoCapture(ir_video)

@@ -30,16 +30,13 @@ generator.load_state_dict(torch.load(model_path, weights_only=True))
 generator.eval()
     
 
-def get_dehazed_vid_path(wl_video: str) -> str:
-    batch_size = 12
+def get_dehazed_vid_path(wl_video: str, output_video=None) -> str:
+    if output_video is None: output_video = "./output_deahze.mp4"
+    batch_size = 48
+    fps = 25
     
-
     dataset = MemVidGanDataset(wl_vid=wl_video, transform=transform)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-
-
-    output_video = "./output_deahze.mp4"
-    fps = 25
 
     first_batch_input, first_batch_real = next(iter(dataloader))
     first_input = _post_compute(first_batch_input)[0]
@@ -75,3 +72,66 @@ def get_dehazed_vid_path(wl_video: str) -> str:
         print绿(f"Video saved at {output_video}")
     
     return os.path.abspath(output_video)
+
+
+def get_dehazed_vid_path_(wl_video: str, output_video=None) -> str:
+    if output_video is None: output_video = "./output_deahze.mp4"
+    batch_size = 48
+    fps = 25
+    
+
+    dataset = MemVidGanDataset(wl_vid=wl_video, transform=transform)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    tgt_size = (734, 480,)
+
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    video_writer = cv2.VideoWriter(output_video, fourcc, fps, tgt_size)
+
+    try:
+        with torch.no_grad():
+            for k, (wl_images, _) in enumerate(dataloader):
+                wl_images = wl_images.to(device)
+                color_images = wl_to_color(wl_images)
+                
+                fake_images = generator(color_images)
+                fake_images = _post_compute(fake_images)
+                wl_images = _post_compute(wl_images)
+                color_images = _post_compute(color_images)
+
+
+
+                for i in range(fake_images.shape[0]):
+                    wl_frame = cv2.cvtColor(wl_images[i], cv2.COLOR_RGB2BGR)
+                    color_frame = cv2.cvtColor(color_images[i], cv2.COLOR_RGB2BGR)
+                    fake_frame = cv2.cvtColor(fake_images[i], cv2.COLOR_RGB2BGR)
+                    video_writer.write(bw_to_rgb(rgb_to_bw(cv2.resize(fake_frame, tgt_size))))
+                    print绿(f"\rProcessing batch: {k}", end='')
+    finally:
+        video_writer.release()
+        print绿(f"Video saved at {output_video}")
+    
+    return os.path.abspath(output_video)
+
+def rgb_to_bw(frame):
+    """
+    Convert an RGB frame (np.ndarray) to a black - white frame.
+    """
+    if len(frame.shape) == 3 and frame.shape[2] == 3:
+        bw_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        return bw_frame
+    else:
+        print("Input is not a valid RGB frame.")
+        raise ValueError
+
+
+def bw_to_rgb(frame):
+    """
+    Convert a black - white frame (np.ndarray) to an RGB frame.
+    """
+    if len(frame.shape) == 2:
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+        return rgb_frame
+    else:
+        print("Input is not a valid black - white frame.")
+        raise ValueError

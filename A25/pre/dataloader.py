@@ -103,9 +103,12 @@ class DEYOLO_Dataset(GanDataset):
         self.transform = transform
         
 class MemDEYOLO_Dataset(DEYOLO_Dataset):
-    def __init__(self, wl_dir, ir_dir, transform=None):
-        super().__init__(wl_dir, ir_dir, transform)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.mem = [self.get(i) for i in tqdm(range(self.length()), desc="Loading dataset into memory")]
+
+    def __getitem__(self, idx):
+        return self.mem[idx]
 
     def __getitem__(self, idx):
         return self.mem[idx]
@@ -138,7 +141,7 @@ class MemVidGanDataset(Dataset):
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(self._get(frame))
                 pbar.update(1)
-                # if pbar.n  > 500: break
+                if pbar.n  > 500: break
         cap.release()
         return frames
     

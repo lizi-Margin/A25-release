@@ -73,7 +73,7 @@ def wl_to_color(wl_images):
     # color_images = batch_process(color_images, func=CEEF); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
     # color_images = batch_process(color_images, func=automatedMSRCR); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
     # color_images = batch_process(color_images, func=MSRCR); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
-    # color_images = batch_process(color_images, func=MSRCP); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
+    color_images = batch_process(color_images, func=MSRCP); color_images = (color_images - color_images.min())/(color_images.max() - color_images.min())
 
     color_images = kornia.enhance.normalize(color_images, 0.5, 0.5)
     color_images = F.resize(color_images, wl_images.shape[-2:])
