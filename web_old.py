@@ -82,89 +82,11 @@ def run_detect_metrics(imagedir_path, label_path, fusion_method):
 
 # 自定义CSS样式
 custom_css = """
-/* 整体主题 */
-:root {
-    --primary-color: #2c3e50;
-    --secondary-color: #34495e;
-    --accent-color: #3498db;
-    --background-color: #ecf0f1;
-}
-
-/* 容器样式 */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-/* 标题样式 */
-h1, h2, h3 {
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-}
-
-/* 卡片样式 */
-.gr-box {
-    border-radius: 15px;
-    padding: 20px;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    transition: transform 0.2s;
-}
-
-.gr-box:hover {
-    transform: translateY(-2px);
-}
-
-/* 按钮样式 */
-.gr-button {
-    background-color: var(--accent-color);
-    color: white;
-    border-radius: 8px;
-    padding: 10px 20px;
-    transition: all 0.3s;
-}
-
-.gr-button:hover {
-    background-color: var(--primary-color);
-    transform: scale(1.05);
-}
-
-/* 表格样式 */
-.gr-dataframe {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.gr-dataframe table {
-    width: 100%;
-    border-collapse: collapse;
-    max-height: 400px;
-    overflow-y: auto;
-    display: block;
-}
-
-.gr-dataframe th {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 12px;
-    text-align: left;
-    position: sticky;
-    top: 0;
-}
-
-.gr-dataframe td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-}
-
-.gr-dataframe tr:nth-child(even) {
-    background-color: var(--background-color);
-}
+.gr-box {border-radius: 10px; padding: 15px; background-color: #f9f9f9;}
+.gr-dataframe table {width: 100%; border-collapse: collapse; max-height: 400px; overflow-y: auto; display: block;}
+.gr-dataframe th {background-color: #4CAF50; color: white; padding: 8px; text-align: left; position: sticky; top: 0;}
+.gr-dataframe td {padding: 8px; border-bottom: 1px solid #ddd;}
+.gr-dataframe tr:nth-child(even) {background-color: #f2f2f2;}
 """
 
 with gr.Blocks(title="A25-release", css=custom_css) as interface:

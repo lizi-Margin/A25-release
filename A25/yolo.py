@@ -132,8 +132,8 @@ def test_yolo_metics(images_dir, labels_dir):
 
     output_dir = cfg.outputdir
     output_video= f"{cfg.outputdir}/output_yolo.mp4"
-    images_dir = 'datasets/yolo_test'
-    labels_dir = 'datasets/yolo_test_labels'
+    images_dir = 'datasets/wl_test'
+    labels_dir = 'datasets/deyolo_test_labels'
 
     class_names = ["person"] 
     iou_thresholds = [0.5, 0.75]  
@@ -141,14 +141,14 @@ def test_yolo_metics(images_dir, labels_dir):
     
     from A25.detection_metrics import DetectionMetrics
     metrics = DetectionMetrics(iou_thresholds=iou_thresholds, class_names=class_names)
-    dataset = MemDEYOLO_Dataset(images_dir, transform=None)
-    images = dataset.mem
+    images = sorted(os.listdir(images_dir),key=extract_number)
+    images = [cv2.imread(f"{images_dir}/{im}") for im in images]
     labels = sorted(os.listdir(labels_dir),key=extract_number)
     if len(labels) != len(images):
         print红("Warning: len(labels) != len(images)")
         assert len(labels) > len(images)
         labels = labels[0:len(images)]
-    assert len(labels) == len(images)
+    assert len(labels) == len(images) and len(labels) > 0
     N_images = len(images)
 
     
