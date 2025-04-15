@@ -58,13 +58,23 @@ def _predict(frame_or_batch):
 
     return results
 
-def get_deyolo_vid_path(wl_vid :str, ir_vid :str):
+def get_deyolo_vid_path(wl_vid :str, ir_vid :str, vid_to_annotate):
+    assert os.path.exists(vid_to_annotate), f"ERROR: 视频文件不存在: {vid_to_annotate}"
+    vid_to_annotate = cv2.VideoCapture(vid_to_annotate)
+    if not vid_to_annotate.isOpened():
+        print红(f"ERROR: 视频打开失败: {vid_to_annotate}")
+        assert False
     # deyolo检测
     output_video= f"{cfg.outputdir}/output_deyolo.mp4"
 
     dataset = MemVidGanDataset(wl_vid, ir_vid=ir_vid, transform=None)
 
-    first_frame = combime_wl_ir(*dataset[0])
+    # first_frame = combime_wl_ir(*dataset[0])
+    first_frame = vid_to_annotate.read()[1]
+    if first_frame is None:
+        print红("ERROR: 视频帧读取失败")
+        assert False
+    vid_to_annotate.set(cv2.CAP_PROP_POS_FRAMES, 0)
     height, width, _ = first_frame.shape
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     fps = 25
@@ -73,6 +83,11 @@ def get_deyolo_vid_path(wl_vid :str, ir_vid :str):
     try:
         for i, (wl_frame, ir_frame) in enumerate(dataset):
             print绿(f"\r testing frame {i}: {wl_frame.shape}, {ir_frame.shape}", end='')
+            frame_to_annotate = vid_to_annotate.read()[1]
+
+            if frame_to_annotate is None:
+                print红(f"ERROR: 视频帧读取失败: {i}")
+                break
 
             results = _predict([wl_frame, ir_frame,])
             if isinstance(results, list):
@@ -84,10 +99,11 @@ def get_deyolo_vid_path(wl_vid :str, ir_vid :str):
             detections = tracker.update_with_detections(detections)
 
             annotator = sv.BoxAnnotator()
-            wl_frame = annotator.annotate(scene=wl_frame, detections=detections)
-            ir_frame = annotator.annotate(scene=ir_frame, detections=detections)
+            # wl_frame = annotator.annotate(scene=wl_frame, detections=detections)
+            # ir_frame = annotator.annotate(scene=ir_frame, detections=detections)
+            frame_to_annotate = annotator.annotate(scene=frame_to_annotate, detections=detections)
 
-            video_writer.write(combime_wl_ir(wl_frame, ir_frame))
+            video_writer.write(frame_to_annotate)
     finally:
         video_writer.release()       
 
@@ -104,7 +120,7 @@ def test_deyolo_metics(images_dir, labels_dir):
 
     class_names = ["person"] 
     iou_thresholds = [0.5, 0.75]  
-    confidence_thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    confidence_thresholds = [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.91, 0.92, 0.93, 0.94]
     
     from A25.detection_metrics import DetectionMetrics
     metrics = DetectionMetrics(iou_thresholds=iou_thresholds, class_names=class_names)

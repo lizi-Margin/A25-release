@@ -1,6 +1,7 @@
 import cv2
 import os
 
+
 def vid2img(video_path, N=1):
     if not os.path.exists(video_path):
         print(f"视频文件 {video_path} 不存在。")
@@ -26,7 +27,8 @@ def vid2img(video_path, N=1):
 
         if frame_count % N == 0:
             # 保存帧为图片
-            frame_filename = os.path.join(output_dir, f"frame_{save_count:04d}.jpg")
+            frame_filename = os.path.join(output_dir,
+                                          f"frame_{save_count:04d}.jpg")
             cv2.imwrite(frame_filename, frame)
             save_count += 1
 
@@ -34,3 +36,7 @@ def vid2img(video_path, N=1):
 
     cap.release()
     print(f"共抽取并保存了 {save_count} 帧图片到 {output_dir} 目录。")
+
+
+if __name__ == '__main__':
+    vid2img("./tmp/对齐video/output_fused_smoked2.mp4", N=1)

@@ -12,7 +12,9 @@ from A25.align import get_aligned_vid_path
 def print_vid_info(video):
     print(f"type={type(video)}, value={repr(video)}")
 
-def run_model(wl_video, ir_video):
+def run_model(wl_video, ir_video, vid_to_annotate=None):
+    if vid_to_annotate is None:
+        vid_to_annotate = wl_video
     print蓝("[run_model] called")
     assert isinstance(wl_video, str) and isinstance(ir_video, str)
     print_vid_info(wl_video)
@@ -23,7 +25,7 @@ def run_model(wl_video, ir_video):
         print红(f"[run_model] return value = (None, None)")
         return None, None
 
-    dehazed_o, deyolo_o = get_dehazed_vid_path(wl_video), get_deyolo_vid_path(wl_video, ir_video)
+    dehazed_o, deyolo_o = get_dehazed_vid_path(wl_video), get_deyolo_vid_path(wl_video, ir_video, vid_to_annotate)
     dehazed_o, deyolo_o = _ensure_vid_format(dehazed_o), _ensure_vid_format(deyolo_o)
 
     print蓝(f"[run_model] return value = ({dehazed_o}, {deyolo_o})")
@@ -75,7 +77,35 @@ def get_stream_iter(aligned_wl_video, aligned_ir_video, use_deyolo=True):
             
             o = process_frame(wl_frame, ir_frame, use_deyolo)
             
-            yield o['fused_frame'], o['dehazed_fused_frame'], o['dehazed_wl_frame'], o['deyolo_frame']
+            yield o['dehazed_wl_frame'], o['fused_frame'], o['deyolo_frame']
 
             progress_bar.update(1)
             frame_idx += 1
+
+# from net.FFA import *
+# from net.net import *
+# from net.model_io import *
+# from pre.dataloader import *
+# from pre.extract_number import *
+# from pre.transform import *
+# from siri_utils.img_window import *
+# from siri_utils.mcv_log_manager import *
+# from siri_utils.logger import *
+# from siri_utils.preprocess import *
+# from siri_utils.sleeper import *
+
+# # 导入核心功能模块
+# from A25.align import *
+# from A25.dehaze import *
+# from A25.deyolo import *
+# from A25.shape import *
+# from A25.video_fusion import *
+# from A25.video_utils import *
+# from A25.stream_process import *
+# from A25.wl_to_color import *
+
+# # 导入工具模块
+# from A25.UTIL.colorful import *
+# from A25.UTIL.file_lock import *
+# from A25.UTIL.network import *
+# from A25.UTIL.tensor_ops import *

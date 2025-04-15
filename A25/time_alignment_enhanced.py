@@ -7,6 +7,8 @@ from tqdm import tqdm
 from A25.pytorch_ssim import ssim
 from A25.global_config import GlobalConfig as cfg
 
+sample_size = 100 
+window_size=400
 
 # def compute_similarity(frame1, frame2):
 #     """计算两帧的结构相似性（SSIM）"""
@@ -25,8 +27,9 @@ def compute_similarity(frame1, frame2):
 
 
 
-def find_alignment_anchor(video_path1, video_path2, sample_size=20, window_size=100, output=None):
-    """随机选择 sample_size 帧，找到最相似的一对帧作为锚点"""
+def find_alignment_anchor(video_path1, video_path2, output=None):
+    """找到最相似的一对帧作为锚点"""
+    assert os.path.exists(video_path1) and os.path.exists(video_path2)
     cap1 = cv2.VideoCapture(video_path1)
     cap2 = cv2.VideoCapture(video_path2)
 
@@ -48,27 +51,49 @@ def find_alignment_anchor(video_path1, video_path2, sample_size=20, window_size=
     cap2.release()
 
     num_frames1, num_frames2 = len(frames1), len(frames2)
+    min_num_frames = min(num_frames1, num_frames2)
 
-    # 从frames1中随机选择 sample_size 帧
-    n = min(sample_size, num_frames1)
-    # sampled_indices = random.sample(range(num_frames1), n)
-    sampled_indices = random.sample(range(min(2 * sample_size, num_frames1)), n)
+    n = min(sample_size, min_num_frames)
+    all_ind = list(range(min_num_frames))
 
-    best_match = -1
+    rand_n = int(n * 1)
+
+    sampled_indices = random.sample(all_ind, int(rand_n))
+    for x in sampled_indices: all_ind.remove(x)
+    sampled_indices += all_ind[0:int(n - rand_n)]  # 多取前面的帧,因为前面烟雾可能比较少...比较适合对齐....
+
+    print(sampled_indices)
+
+    best_ind = -1
     best_frame1, best_frame2 = -1, -1
+    similarity_window = np.array([0] * window_size)
 
     # 计算随机选择的帧与所有帧的相似度
-    for i in tqdm(sampled_indices, desc="查找锚点帧"):
-        start_index = max(0, i - window_size)
-        end_index = min(num_frames2, i + window_size)
+    for i in tqdm(sampled_indices, desc=f"查找锚点帧"):
+        start_index = max(0, i - int(window_size/2))
+        end_index = min(num_frames2, i + int(window_size/2))
+        new_similarity = np.zeros_like(similarity_window)
 
-        for j in tqdm(range(start_index, end_index), desc=f"对比 {i} 帧", leave=False):
+        for j in tqdm(range(start_index, end_index), desc=f"对比 {i} 帧, best_ind={best_ind}", leave=False):
+            ind = int(window_size/2) + int(j - i)
             frame2_resized = cv2.resize(frames2[j], (frames1[i].shape[1], frames1[i].shape[0]))
             similarity = compute_similarity(frames1[i], frame2_resized)
+            new_similarity[ind] = similarity
+            
+        
+        for i in range(len(new_similarity)):
+            if new_similarity[i] == 0 or i == 0 or i == len(new_similarity) - 1: new_similarity[i] = np.mean(new_similarity)
 
-            if similarity > best_match:
-                best_match = similarity
-                best_frame1, best_frame2 = i, j
+        new_similarity = (new_similarity - np.min(new_similarity)) / (np.max(new_similarity)+1e-4 - np.min(new_similarity))
+            
+        similarity_window = similarity_window * 0.97 + new_similarity * 0.03
+        # print(similarity_window)
+        best_ind_ = np.argmax(similarity_window)
+        if best_ind_ != best_ind:
+            print(best_ind_)
+            best_j =  - int(window_size/2) + i
+            best_frame1, best_frame2 = i, best_j
+        best_ind = best_ind_
     
     if output is not None:
         best_img1, best_img2 = frames1[best_frame1], frames2[best_frame2]
@@ -85,10 +110,10 @@ def find_alignment_anchor(video_path1, video_path2, sample_size=20, window_size=
     return best_frame1, best_frame2
 
 
-def align_and_save_video(video_path1, video_path2, sample_size=20):
+def align_and_save_video(video_path1, video_path2):
     output_dir = cfg.outputdir
     """基于锚点帧对齐视频"""
-    best_frame1_idx, best_frame2_idx = find_alignment_anchor(video_path1, video_path2, sample_size, output=os.path.join(output_dir, 'output_time_alignment') if output_dir else './output_time_alignment')
+    best_frame1_idx, best_frame2_idx = find_alignment_anchor(video_path1, video_path2, output=os.path.join(output_dir, 'output_time_alignment') if output_dir else './output_time_alignment')
 
 
 
@@ -149,7 +174,7 @@ def align_and_save_video(video_path1, video_path2, sample_size=20):
 
     
 def get_aligned_vid_path(video1, video2):
-    return align_and_save_video(video1, video2, sample_size=20)
+    return align_and_save_video(video1, video2)
 
 
 def test_alignment(video1, video2):

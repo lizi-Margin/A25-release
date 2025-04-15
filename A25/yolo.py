@@ -6,6 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 import supervision as sv
+from tqdm import tqdm
 from typing import Union, List
 from A25.UTIL.colorful import *
 from A25.siri_utils.sleeper import Sleeper
@@ -128,23 +129,33 @@ def get_yolo_vid_path(wl_vid :str):
     return os.path.abspath(output_video)
 
 
-def test_yolo_metics(images_dir, labels_dir):
+def test_yolo_metics(images_dir, labels_dir, image_dir_to_annotate=None):
 
     output_dir = cfg.outputdir
     output_video= f"{cfg.outputdir}/output_yolo.mp4"
-    images_dir = 'datasets/wl_test'
+    # images_dir = 'datasets/wl_test'
     labels_dir = 'datasets/deyolo_test_labels'
 
     class_names = ["person"] 
     iou_thresholds = [0.5, 0.75]  
-    confidence_thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    confidence_thresholds = [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.91, 0.92, 0.93, 0.94]
     
     from A25.detection_metrics import DetectionMetrics
     metrics = DetectionMetrics(iou_thresholds=iou_thresholds, class_names=class_names)
-    images = sorted(os.listdir(images_dir),key=extract_number)
-    images = [cv2.imread(f"{images_dir}/{im}") for im in images]
     labels = sorted(os.listdir(labels_dir),key=extract_number)
-    if len(labels) != len(images):
+    images = sorted(os.listdir(images_dir),key=extract_number)
+    labels = labels[:500]
+    images = images[:500]
+
+    images = [cv2.imread(f"{images_dir}/{im}") for im in tqdm(images, desc="载入内存")]
+    if (image_dir_to_annotate is None) or image_dir_to_annotate == images_dir:
+        images_annotate = images
+    else:
+        images_annotate = sorted(os.listdir(image_dir_to_annotate),key=extract_number)
+        images_annotate = images_annotate[:500]
+        images_annotate = [cv2.imread(f"{image_dir_to_annotate}/{im}") for im in tqdm(images_annotate, desc="载入内存")]
+    
+    if len(labels) != len(images) or len(labels) != len(images_annotate):
         print红("Warning: len(labels) != len(images)")
         assert len(labels) > len(images)
         labels = labels[0:len(images)]
@@ -152,7 +163,7 @@ def test_yolo_metics(images_dir, labels_dir):
     N_images = len(images)
 
     
-    first_frame = images[0]
+    first_frame = images_annotate[0]
     height, width = first_frame.shape[:2]
     
 
@@ -187,11 +198,11 @@ def test_yolo_metics(images_dir, labels_dir):
             detections = tracker.update_with_detections(detections)
 
             annotator = sv.BoxAnnotator()
-            wl_frame = annotator.annotate(scene=wl_frame, detections=detections)
+            frame = annotator.annotate(scene=images_annotate[i], detections=detections)
 
-            video_writer.write(wl_frame)
+            video_writer.write(frame)
             realtime_frame = f"{cfg.outputdir}/test_deyolo_metrics.jpg"
-            cv2.imwrite(realtime_frame, wl_frame)
+            cv2.imwrite(realtime_frame, frame)
 
             yield realtime_frame, f"{inference_time:.2f} ms", f"{1/(inference_time/1000):.2f}", None, None, None
             

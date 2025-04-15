@@ -60,15 +60,16 @@ def dehaze_frame(frame):
     assert len(frame.shape) == 3 and isinstance(frame, torch.Tensor)
     frame = frame.unsqueeze(0).to(device)
 
-    color_images = dehaze.wl_to_color(frame)
-    
-    fake_images = dehaze.generator(color_images)
+    with torch.no_grad():
+        color_images = dehaze.wl_to_color(frame)
+        fake_images = dehaze.generator(color_images)
     fake_images = dehaze._post_compute(fake_images)[0]
     fake_images = cv2.resize(fake_images, (w, h))
 
     return cv2.cvtColor(fake_images, cv2.COLOR_RGB2BGR)
 
-def deyolo_detect_frame(wl_frame, ir_frame):
+def deyolo_detect_frame(wl_frame, ir_frame, frame_to_annotate=None):
+    if frame_to_annotate is None: frame_to_annotate = wl_frame
     results = deyolo._predict([wl_frame, ir_frame,])
     if isinstance(results, list):
         result = results[0]
@@ -79,11 +80,11 @@ def deyolo_detect_frame(wl_frame, ir_frame):
     detections = deyolo.tracker.update_with_detections(detections)
 
     annotator = sv.BoxAnnotator()
-    wl_frame = annotator.annotate(scene=wl_frame, detections=detections)
-    ir_frame = annotator.annotate(scene=ir_frame, detections=detections)
-    return wl_frame, detections
+    frame = annotator.annotate(scene=frame_to_annotate.copy(), detections=detections)
+    return frame, detections
 
-def yolo_detect_frame(frame):
+def yolo_detect_frame(frame, frame_to_annotate=None):
+    if frame_to_annotate is None: frame_to_annotate = frame
     results = yolo._predict(frame)
     if isinstance(results, list):
         result = results[0]
@@ -94,8 +95,8 @@ def yolo_detect_frame(frame):
     detections = deyolo.tracker.update_with_detections(detections)
 
     annotator = sv.BoxAnnotator()
-    frame = annotator.annotate(scene=frame, detections=detections)
-    return frame, detections
+    frame_to_annotate = annotator.annotate(scene=frame_to_annotate.copy(), detections=detections)
+    return frame_to_annotate, detections
 
 def process_frame(wl_frame, ir_frame, use_deyolo):
     fused_frame = fuse_frame(wl_frame, ir_frame)
@@ -105,7 +106,7 @@ def process_frame(wl_frame, ir_frame, use_deyolo):
     dehazed_fused_frame = fuse_frame(dehazed_wl_frame, ir_frame)
 
     if use_deyolo:
-        yolo_frame, yolo_detections = deyolo_detect_frame(wl_frame, ir_frame)
+        yolo_frame, yolo_detections = deyolo_detect_frame(wl_frame, ir_frame, frame_to_annotate=dehazed_fused_frame)
     else:
         yolo_frame, yolo_detections = yolo_detect_frame(wl_frame)
 
@@ -119,8 +120,8 @@ def process_frame(wl_frame, ir_frame, use_deyolo):
     cv2.imwrite(yolo_frame_path, yolo_frame)
 
     return {
-        'fused_frame': fused_frame_path,
-        'dehazed_fused_frame': dehazed_fused_frame_path,
+        'fused_frame': dehazed_fused_frame_path,
+        # 'dehazed_fused_frame': dehazed_fused_frame_path,
         'dehazed_wl_frame': dehazed_wl_frame_path,
         'deyolo_frame': yolo_frame_path
     }

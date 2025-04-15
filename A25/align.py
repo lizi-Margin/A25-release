@@ -1,4 +1,4 @@
-import sys
+import sys, shutil
 import os, cv2
 import subprocess
 import numpy as np
@@ -185,8 +185,20 @@ def convert_vid_fps(input_file, target_fps=25.0):
         print(f"转换失败，输出文件未创建或为空: {output_file}")
         return input_file
 
-@with_dual_cache
 def get_aligned_vid_path(wl_vid, ir_vid):
+    manual_aligned_wl =  os.path.join("datasets/videos/manual_aligned/20s/", os.path.basename(wl_vid))
+    manual_aligned_ir =  os.path.join("datasets/videos/manual_aligned/20s/", os.path.basename(ir_vid))
+    manual_aligned_wl_tmp =  os.path.join("/tmp", os.path.basename(wl_vid))
+    manual_aligned_ir_tmp =  os.path.join("/tmp", os.path.basename(ir_vid))
+    if os.path.exists(manual_aligned_wl) and os.path.exists(manual_aligned_ir):
+        shutil.copy2(manual_aligned_wl, manual_aligned_wl_tmp)
+        shutil.copy2(manual_aligned_ir, manual_aligned_ir_tmp)
+        print("use", manual_aligned_wl_tmp, manual_aligned_ir_tmp)
+        get_aligned_vid_path_(wl_vid, ir_vid)
+        return manual_aligned_wl_tmp, manual_aligned_ir_tmp
+    return get_aligned_vid_path_(wl_vid, ir_vid)
+# @with_dual_cache
+def get_aligned_vid_path_(wl_vid, ir_vid):
     ir_vid = convert_vid_fps_with_speed(ir_vid, original_fps=25, target_fps=30)
     ir_vid = convert_vid_fps(ir_vid, target_fps=25)
     wl_vid, ir_vid = get_shaped_vid_path(wl_vid, ir_vid)
